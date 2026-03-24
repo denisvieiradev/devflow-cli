@@ -10,6 +10,9 @@ import { makeCommitCommand } from "./commands/commit.js";
 import { makeRunTasksCommand } from "./commands/run-tasks.js";
 import { makeTestCommand } from "./commands/test.js";
 import { makeReviewCommand } from "./commands/review.js";
+import { makePrCommand } from "./commands/pr.js";
+import { makeDoneCommand } from "./commands/done.js";
+import { makeStatusCommand } from "./commands/status.js";
 
 function loadVersion(): string {
   const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -38,5 +41,8 @@ export function createProgram(): Command {
   program.addCommand(makeRunTasksCommand());
   program.addCommand(makeTestCommand());
   program.addCommand(makeReviewCommand());
+  program.addCommand(makePrCommand());
+  program.addCommand(makeDoneCommand());
+  program.addCommand(makeStatusCommand());
   return program;
 }
