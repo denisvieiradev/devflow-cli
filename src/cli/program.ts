@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { makeInitCommand } from "./commands/init.js";
 
 function loadVersion(): string {
   const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -22,5 +23,6 @@ export function createProgram(): Command {
       "CLI pipeline for structured software development — from PRD to merge",
     )
     .version(loadVersion());
+  program.addCommand(makeInitCommand());
   return program;
 }
