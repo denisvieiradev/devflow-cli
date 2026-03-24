@@ -12,6 +12,7 @@ import { ContextBuilder, type Document } from "../../core/context.js";
 import { ClaudeProvider } from "../../providers/claude.js";
 import { resolveModelTier } from "../../providers/model-router.js";
 import { fileExists } from "../../infra/filesystem.js";
+import { checkDrift } from "../../core/drift.js";
 
 export function makeTechspecCommand(): Command {
   return new Command("techspec")
@@ -34,6 +35,10 @@ export function makeTechspecCommand(): Command {
       if (!featureRef) {
         p.cancel(`Feature '${ref}' not found.`);
         process.exit(1);
+      }
+      const driftWarnings = await checkDrift(cwd, featureRef, state);
+      for (const warning of driftWarnings) {
+        p.log.warn(warning.message);
       }
       const featurePath = getFeaturePath(cwd, featureRef);
       const prdPath = join(featurePath, "prd.md");

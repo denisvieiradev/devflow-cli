@@ -11,6 +11,7 @@ import { ClaudeProvider } from "../../providers/claude.js";
 import { resolveModelTier } from "../../providers/model-router.js";
 import { fileExists } from "../../infra/filesystem.js";
 import * as git from "../../infra/git.js";
+import { checkDrift } from "../../core/drift.js";
 import type { TaskState } from "../../core/types.js";
 
 export function makeRunTasksCommand(): Command {
@@ -45,6 +46,10 @@ export function makeRunTasksCommand(): Command {
       }
       if (feature.phase !== "tasks_created" && feature.phase !== "in_progress") {
         state = updatePhase(state, featureRef, "in_progress");
+      }
+      const driftWarnings = await checkDrift(cwd, featureRef, state);
+      for (const warning of driftWarnings) {
+        p.log.warn(warning.message);
       }
       const featurePath = getFeaturePath(cwd, featureRef);
       const pendingTasks = feature.tasks.filter((t: TaskState) => !t.completed);
