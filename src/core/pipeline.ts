@@ -1,1 +1,57 @@
-export {};
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { fileExists } from "../infra/filesystem.js";
+import type { DevflowState } from "./types.js";
+
+const FEATURES_DIR = ".devflow/features";
+
+export function getNextFeatureNumber(state: DevflowState): number {
+  const numbers = Object.values(state.features).map((f) => f.number);
+  if (numbers.length === 0) return 1;
+  return Math.max(...numbers) + 1;
+}
+
+export function generateSlug(description: string): string {
+  return description
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40)
+    .replace(/-$/, "");
+}
+
+export function formatFeatureRef(number: number, slug: string): string {
+  const padded = String(number).padStart(3, "0");
+  return `${padded}-${slug}`;
+}
+
+export function getFeaturesDir(projectRoot: string): string {
+  return join(projectRoot, FEATURES_DIR);
+}
+
+export function getFeaturePath(projectRoot: string, featureRef: string): string {
+  return join(projectRoot, FEATURES_DIR, featureRef);
+}
+
+export async function resolveFeatureRef(
+  projectRoot: string,
+  state: DevflowState,
+  ref: string,
+): Promise<string | null> {
+  if (state.features[ref]) return ref;
+  const match = Object.keys(state.features).find(
+    (key) => key.startsWith(ref) || key.includes(ref),
+  );
+  if (match) return match;
+  const featuresDir = getFeaturesDir(projectRoot);
+  if (await fileExists(featuresDir)) {
+    const entries = await readdir(featuresDir);
+    const dirMatch = entries.find(
+      (entry) => entry.startsWith(ref) || entry.includes(ref),
+    );
+    if (dirMatch) return dirMatch;
+  }
+  return null;
+}
