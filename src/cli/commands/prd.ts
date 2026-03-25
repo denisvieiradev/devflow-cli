@@ -10,7 +10,7 @@ import { TemplateEngine } from "../../core/template.js";
 import { ContextBuilder, type Document } from "../../core/context.js";
 import { ClaudeProvider, validateApiKey, handleLLMError } from "../../providers/claude.js";
 import { resolveModelTier } from "../../providers/model-router.js";
-import { ensureDir } from "../../infra/filesystem.js";
+import { ensureDir, fileExists } from "../../infra/filesystem.js";
 import type { FeatureState } from "../../core/types.js";
 
 export function makePrdCommand(): Command {
@@ -32,6 +32,16 @@ export function makePrdCommand(): Command {
       const slug = generateSlug(description);
       const featureRef = formatFeatureRef(number, slug);
       const featurePath = getFeaturePath(cwd, featureRef);
+      const existingPrdPath = `${featurePath}/prd.md`;
+      if (await fileExists(existingPrdPath)) {
+        const overwrite = await p.confirm({
+          message: `PRD already exists at ${existingPrdPath}. Overwrite?`,
+        });
+        if (p.isCancel(overwrite) || !overwrite) {
+          p.cancel("PRD generation cancelled.");
+          process.exit(0);
+        }
+      }
       p.log.info(`Feature: ${featureRef}`);
       const provider = new ClaudeProvider(config);
       const tier = resolveModelTier("prd");

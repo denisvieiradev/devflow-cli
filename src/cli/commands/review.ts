@@ -95,8 +95,8 @@ End with a summary: total findings count per category and overall recommendation
       const reviewPath = join(featurePath, "review.md");
       await writeFile(reviewPath, response.content, "utf-8");
       p.log.success(`Review saved: ${reviewPath}`);
-      const hasCritical = response.content.toLowerCase().includes("## critical") &&
-        !response.content.includes("No critical issues");
+      const hasCritical = /^#{1,3}\s*critical/im.test(response.content) &&
+        !/no critical issues/i.test(response.content);
       if (hasCritical) {
         p.log.warn("Critical findings detected. Consider running `devflow tasks` to generate fix tasks.");
       }

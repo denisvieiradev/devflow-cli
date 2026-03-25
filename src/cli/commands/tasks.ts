@@ -97,31 +97,46 @@ Tasks should be ordered by dependency. Each task should be independently impleme
         handleLLMError(err);
       }
       const content = response.content;
-      const tasksListMatch = content.match(/```tasks\n([\s\S]*?)```/);
-      const tasksList = tasksListMatch ? tasksListMatch[1]!.trim() : content;
+      // Pattern 1: ```tasks fenced block
+      const tasksListMatch = content.match(/```(?:tasks|markdown)\n([\s\S]*?)```/);
+      const tasksList = tasksListMatch?.[1]?.trim() ?? content;
       const tasksPath = join(featurePath, "tasks.md");
       await writeFile(tasksPath, `# Tasks: ${featureRef}\n\n${tasksList}\n`, "utf-8");
+      // Pattern 1: ```task:N fenced blocks
       const taskSections = content.matchAll(/```task:(\d+)\n([\s\S]*?)```/g);
       const parsedTasks: TaskState[] = [];
       for (const match of taskSections) {
-        const taskNumber = parseInt(match[1]!, 10);
-        const taskContent = match[2]!.trim();
+        const taskNumber = match[1] ? parseInt(match[1], 10) : NaN;
+        const taskContent = match[2]?.trim() ?? "";
+        if (isNaN(taskNumber) || !taskContent) continue;
         const taskFilePath = join(featurePath, `${taskNumber}_task.md`);
         await writeFile(taskFilePath, taskContent, "utf-8");
         const titleMatch = taskContent.match(/^# (?:Task \d+(?:\.\d+)?: )?(.+)/m);
-        const title = titleMatch ? titleMatch[1]! : `Task ${taskNumber}`;
+        const title = titleMatch?.[1] ?? `Task ${taskNumber}`;
         parsedTasks.push({ number: taskNumber, title, completed: false });
       }
+      // Pattern 2: ## Task N headers (no fenced blocks)
+      if (parsedTasks.length === 0) {
+        const headerSections = content.matchAll(/^##\s*Task\s+(\d+)(?:\.\d+)?[:\s]+(.+)/gm);
+        for (const match of headerSections) {
+          const taskNumber = match[1] ? parseInt(match[1], 10) : NaN;
+          const title = match[2]?.trim() ?? "";
+          if (!isNaN(taskNumber) && title) {
+            parsedTasks.push({ number: taskNumber, title, completed: false });
+          }
+        }
+      }
+      // Pattern 3: - [ ] N.0 Title lines
       if (parsedTasks.length === 0) {
         const lines = tasksList.split("\n");
         for (const line of lines) {
           const lineMatch = line.match(/- \[ \] (\d+)(?:\.\d+)?\s+(.+)/);
           if (lineMatch) {
-            parsedTasks.push({
-              number: parseInt(lineMatch[1]!, 10),
-              title: lineMatch[2]!,
-              completed: false,
-            });
+            const taskNumber = lineMatch[1] ? parseInt(lineMatch[1], 10) : NaN;
+            const title = lineMatch[2]?.trim() ?? "";
+            if (!isNaN(taskNumber) && title) {
+              parsedTasks.push({ number: taskNumber, title, completed: false });
+            }
           }
         }
       }
