@@ -3,15 +3,15 @@ import * as p from "@clack/prompts";
 import ora from "ora";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { readConfig } from "../../core/config.js";
-import { readState, writeState, updatePhase } from "../../core/state.js";
-import { resolveFeatureRef, getFeaturePath } from "../../core/pipeline.js";
+import { writeState, updatePhase } from "../../core/state.js";
+import { getFeaturePath } from "../../core/pipeline.js";
 import { ContextBuilder, type Document } from "../../core/context.js";
 import { ClaudeProvider, validateApiKey, handleLLMError } from "../../providers/claude.js";
 import { resolveModelTier } from "../../providers/model-router.js";
 import { fileExists } from "../../infra/filesystem.js";
 import { checkDrift } from "../../core/drift.js";
 import type { TaskState } from "../../core/types.js";
+import { withFeatureContext } from "../context.js";
 
 export function makeTasksCommand(): Command {
   return new Command("tasks")
@@ -20,21 +20,8 @@ export function makeTasksCommand(): Command {
     .action(async (ref: string | undefined) => {
       const cwd = process.cwd();
       p.intro("devflow tasks");
-      const config = await readConfig(cwd);
-      if (!config) {
-        p.cancel("No config found. Run `devflow init` first.");
-        process.exit(1);
-      }
-      let state = await readState(cwd);
-      if (!ref) {
-        p.cancel("Feature reference is required. Usage: devflow tasks <ref>");
-        process.exit(1);
-      }
-      const featureRef = await resolveFeatureRef(cwd, state, ref);
-      if (!featureRef) {
-        p.cancel(`Feature '${ref}' not found.`);
-        process.exit(1);
-      }
+      const { config, state: initialState, featureRef } = await withFeatureContext(cwd, ref, "tasks");
+      let state = initialState;
       const driftWarnings = await checkDrift(cwd, featureRef, state);
       for (const warning of driftWarnings) {
         p.log.warn(warning.message);
@@ -98,12 +85,10 @@ Tasks should be ordered by dependency. Each task should be independently impleme
         return;
       }
       const content = response.content;
-      // Pattern 1: ```tasks fenced block
       const tasksListMatch = content.match(/```(?:tasks|markdown)\n([\s\S]*?)```/);
       const tasksList = tasksListMatch?.[1]?.trim() ?? content;
       const tasksPath = join(featurePath, "tasks.md");
       await writeFile(tasksPath, `# Tasks: ${featureRef}\n\n${tasksList}\n`, "utf-8");
-      // Pattern 1: ```task:N fenced blocks
       const taskSections = content.matchAll(/```task:(\d+)\n([\s\S]*?)```/g);
       const parsedTasks: TaskState[] = [];
       for (const match of taskSections) {
@@ -116,7 +101,6 @@ Tasks should be ordered by dependency. Each task should be independently impleme
         const title = titleMatch?.[1] ?? `Task ${taskNumber}`;
         parsedTasks.push({ number: taskNumber, title, completed: false });
       }
-      // Pattern 2: ## Task N headers (no fenced blocks)
       if (parsedTasks.length === 0) {
         const headerSections = content.matchAll(/^##\s*Task\s+(\d+)(?:\.\d+)?[:\s]+(.+)/gm);
         for (const match of headerSections) {
@@ -127,7 +111,6 @@ Tasks should be ordered by dependency. Each task should be independently impleme
           }
         }
       }
-      // Pattern 3: - [ ] N.0 Title lines
       if (parsedTasks.length === 0) {
         const lines = tasksList.split("\n");
         for (const line of lines) {

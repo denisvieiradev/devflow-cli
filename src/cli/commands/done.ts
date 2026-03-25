@@ -1,8 +1,7 @@
 import { Command } from "commander";
 import * as p from "@clack/prompts";
-import { readConfig } from "../../core/config.js";
-import { readState, writeState, updatePhase } from "../../core/state.js";
-import { resolveFeatureRef } from "../../core/pipeline.js";
+import { writeState, updatePhase } from "../../core/state.js";
+import { withFeatureContext } from "../context.js";
 
 export function makeDoneCommand(): Command {
   return new Command("done")
@@ -11,21 +10,8 @@ export function makeDoneCommand(): Command {
     .action(async (ref: string | undefined) => {
       const cwd = process.cwd();
       p.intro("devflow done");
-      const config = await readConfig(cwd);
-      if (!config) {
-        p.cancel("No config found. Run `devflow init` first.");
-        process.exit(1);
-      }
-      let state = await readState(cwd);
-      if (!ref) {
-        p.cancel("Feature reference is required. Usage: devflow done <ref>");
-        process.exit(1);
-      }
-      const featureRef = await resolveFeatureRef(cwd, state, ref);
-      if (!featureRef) {
-        p.cancel(`Feature '${ref}' not found.`);
-        process.exit(1);
-      }
+      const { state: initialState, featureRef } = await withFeatureContext(cwd, ref, "done");
+      let state = initialState;
       const feature = state.features[featureRef];
       if (!feature) {
         p.cancel(`Feature '${featureRef}' not found in state.`);

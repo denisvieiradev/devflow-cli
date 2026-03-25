@@ -3,9 +3,8 @@ import * as p from "@clack/prompts";
 import ora from "ora";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { readConfig } from "../../core/config.js";
-import { readState, writeState, updatePhase, completeTask } from "../../core/state.js";
-import { resolveFeatureRef, getFeaturePath } from "../../core/pipeline.js";
+import { writeState, updatePhase, completeTask } from "../../core/state.js";
+import { getFeaturePath } from "../../core/pipeline.js";
 import { ContextBuilder, type Document } from "../../core/context.js";
 import { ClaudeProvider, validateApiKey, handleLLMError } from "../../providers/claude.js";
 import { resolveModelTier } from "../../providers/model-router.js";
@@ -13,6 +12,7 @@ import { fileExists } from "../../infra/filesystem.js";
 import * as git from "../../infra/git.js";
 import { checkDrift } from "../../core/drift.js";
 import type { TaskState } from "../../core/types.js";
+import { withFeatureContext } from "../context.js";
 
 export function makeRunTasksCommand(): Command {
   return new Command("run-tasks")
@@ -21,21 +21,8 @@ export function makeRunTasksCommand(): Command {
     .action(async (ref: string | undefined) => {
       const cwd = process.cwd();
       p.intro("devflow run-tasks");
-      const config = await readConfig(cwd);
-      if (!config) {
-        p.cancel("No config found. Run `devflow init` first.");
-        process.exit(1);
-      }
-      let state = await readState(cwd);
-      if (!ref) {
-        p.cancel("Feature reference is required. Usage: devflow run-tasks <ref>");
-        process.exit(1);
-      }
-      const featureRef = await resolveFeatureRef(cwd, state, ref);
-      if (!featureRef) {
-        p.cancel(`Feature '${ref}' not found.`);
-        process.exit(1);
-      }
+      const { config, state: initialState, featureRef } = await withFeatureContext(cwd, ref, "run-tasks");
+      let state = initialState;
       const feature = state.features[featureRef];
       if (!feature) {
         p.cancel(`Feature '${featureRef}' not found in state.`);

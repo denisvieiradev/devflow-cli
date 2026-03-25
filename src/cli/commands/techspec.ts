@@ -4,15 +4,15 @@ import ora from "ora";
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { readConfig } from "../../core/config.js";
-import { readState, writeState, updatePhase, setArtifact } from "../../core/state.js";
-import { resolveFeatureRef, getFeaturePath } from "../../core/pipeline.js";
+import { writeState, updatePhase, setArtifact } from "../../core/state.js";
+import { getFeaturePath } from "../../core/pipeline.js";
 import { TemplateEngine } from "../../core/template.js";
 import { ContextBuilder, type Document } from "../../core/context.js";
 import { ClaudeProvider, validateApiKey, handleLLMError } from "../../providers/claude.js";
 import { resolveModelTier } from "../../providers/model-router.js";
 import { fileExists } from "../../infra/filesystem.js";
 import { checkDrift } from "../../core/drift.js";
+import { withFeatureContext } from "../context.js";
 
 export function makeTechspecCommand(): Command {
   return new Command("techspec")
@@ -21,21 +21,8 @@ export function makeTechspecCommand(): Command {
     .action(async (ref: string | undefined) => {
       const cwd = process.cwd();
       p.intro("devflow techspec");
-      const config = await readConfig(cwd);
-      if (!config) {
-        p.cancel("No config found. Run `devflow init` first.");
-        process.exit(1);
-      }
-      let state = await readState(cwd);
-      if (!ref) {
-        p.cancel("Feature reference is required. Usage: devflow techspec <ref>");
-        process.exit(1);
-      }
-      const featureRef = await resolveFeatureRef(cwd, state, ref);
-      if (!featureRef) {
-        p.cancel(`Feature '${ref}' not found.`);
-        process.exit(1);
-      }
+      const { config, state: initialState, featureRef } = await withFeatureContext(cwd, ref, "techspec");
+      let state = initialState;
       const driftWarnings = await checkDrift(cwd, featureRef, state);
       for (const warning of driftWarnings) {
         p.log.warn(warning.message);

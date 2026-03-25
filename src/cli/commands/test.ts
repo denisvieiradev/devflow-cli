@@ -5,13 +5,13 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { readConfig } from "../../core/config.js";
-import { readState, writeState, updatePhase } from "../../core/state.js";
-import { resolveFeatureRef, getFeaturePath } from "../../core/pipeline.js";
+import { writeState, updatePhase } from "../../core/state.js";
+import { getFeaturePath } from "../../core/pipeline.js";
 import { ContextBuilder, type Document } from "../../core/context.js";
 import { ClaudeProvider, validateApiKey, handleLLMError } from "../../providers/claude.js";
 import { resolveModelTier } from "../../providers/model-router.js";
 import { fileExists } from "../../infra/filesystem.js";
+import { withFeatureContext } from "../context.js";
 
 const exec = promisify(execFile);
 
@@ -22,21 +22,8 @@ export function makeTestCommand(): Command {
     .action(async (ref: string | undefined) => {
       const cwd = process.cwd();
       p.intro("devflow test");
-      const config = await readConfig(cwd);
-      if (!config) {
-        p.cancel("No config found. Run `devflow init` first.");
-        process.exit(1);
-      }
-      let state = await readState(cwd);
-      if (!ref) {
-        p.cancel("Feature reference is required. Usage: devflow test <ref>");
-        process.exit(1);
-      }
-      const featureRef = await resolveFeatureRef(cwd, state, ref);
-      if (!featureRef) {
-        p.cancel(`Feature '${ref}' not found.`);
-        process.exit(1);
-      }
+      const { config, state: initialState, featureRef } = await withFeatureContext(cwd, ref, "test");
+      let state = initialState;
       const featurePath = getFeaturePath(cwd, featureRef);
       const prdPath = join(featurePath, "prd.md");
       const techspecPath = join(featurePath, "techspec.md");
