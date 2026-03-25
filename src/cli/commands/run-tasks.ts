@@ -41,10 +41,7 @@ export function makeRunTasksCommand(): Command {
         p.cancel(`Feature '${featureRef}' not found in state.`);
         process.exit(1);
       }
-      if (feature.phase === "initialized" || feature.phase === "prd_created" || feature.phase === "techspec_created") {
-        state = updatePhase(state, featureRef, "tasks_created");
-      }
-      if (feature.phase !== "tasks_created" && feature.phase !== "in_progress") {
+      if (feature.phase !== "in_progress") {
         state = updatePhase(state, featureRef, "in_progress");
       }
       const driftWarnings = await checkDrift(cwd, featureRef, state);
@@ -99,9 +96,6 @@ export function makeRunTasksCommand(): Command {
         const outputPath = join(featurePath, `${task.number}_output.md`);
         await writeFile(outputPath, response.content, "utf-8");
         state = completeTask(state, featureRef, task.number);
-        if (feature.phase === "tasks_created") {
-          state = updatePhase(state, featureRef, "in_progress");
-        }
         await writeState(cwd, state);
         try {
           await git.add(cwd, ["."]);
