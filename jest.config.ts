@@ -9,6 +9,7 @@ const config: Config = {
   roots: ["<rootDir>/__tests__"],
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^ora$": "<rootDir>/__mocks__/ora.ts",
   },
   coverageDirectory: "coverage",
   coverageThreshold: {
