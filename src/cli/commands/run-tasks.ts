@@ -97,7 +97,8 @@ export function makeRunTasksCommand(): Command {
         await writeState(cwd, state);
         try {
           await git.add(cwd, ["."]);
-          await git.commit(cwd, `feat: complete task ${task.number} - ${task.title}`);
+          const safeTitle = task.title.replace(/[`"'\n\r\t\\]/g, "").slice(0, 100);
+          await git.commit(cwd, `feat: complete task ${task.number} - ${safeTitle}`);
           const log = await git.getLog(cwd, undefined, 1);
           p.log.success(`Task ${task.number} done — ${log}`);
         } catch {

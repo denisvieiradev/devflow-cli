@@ -39,6 +39,28 @@ describe("TemplateEngine", () => {
         "Template 'nonexistent' not found",
       );
     });
+
+    it("should reject path traversal attempts", async () => {
+      await expect(engine.load("../../../.env")).rejects.toThrow(
+        "Invalid template name",
+      );
+    });
+
+    it("should reject template names with slashes", async () => {
+      await expect(engine.load("foo/bar")).rejects.toThrow(
+        "Invalid template name",
+      );
+    });
+
+    it("should reject template names with dots", async () => {
+      await expect(engine.load("..")).rejects.toThrow("Invalid template name");
+    });
+
+    it("should accept valid template names with hyphens and underscores", async () => {
+      await expect(engine.load("my-template_v2")).rejects.toThrow(
+        "not found",
+      );
+    });
   });
 
   describe("interpolate", () => {

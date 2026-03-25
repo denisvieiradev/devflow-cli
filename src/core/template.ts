@@ -16,7 +16,16 @@ export class TemplateEngine {
     this.bundledTemplatesPath = BUNDLED_TEMPLATES_PATH;
   }
 
+  private validateTemplateName(templateName: string): void {
+    if (!/^[a-zA-Z0-9_-]+$/.test(templateName)) {
+      throw new Error(
+        `Invalid template name: '${templateName}'. Only alphanumeric characters, hyphens, and underscores are allowed.`,
+      );
+    }
+  }
+
   async load(templateName: string): Promise<string> {
+    this.validateTemplateName(templateName);
     const overridePath = join(this.projectTemplatesPath, `${templateName}.md`);
     if (await fileExists(overridePath)) {
       debug("Loading project template override", { path: overridePath });
