@@ -8,6 +8,7 @@ import { ClaudeProvider, validateApiKey, handleLLMError } from "../../providers/
 import { resolveModelTier } from "../../providers/model-router.js";
 import * as git from "../../infra/git.js";
 import { isGhAvailable, createPR } from "../../infra/github.js";
+import { debug } from "../../infra/logger.js";
 
 export function makePrCommand(): Command {
   return new Command("pr")
@@ -41,7 +42,7 @@ export function makePrCommand(): Command {
       try {
         spinner.start("Generating PR title and description...");
         response = await provider.chat({
-        systemPrompt: `You are a developer creating a pull request. Based on the commit log, generate a PR title and description.
+          systemPrompt: `You are a developer creating a pull request. Based on the commit log, generate a PR title and description.
 
 Output format (nothing else):
 TITLE: <concise title, max 70 chars>
@@ -78,8 +79,10 @@ TITLE: <concise title, max 70 chars>
       spinner.start("Pushing branch and creating PR...");
       try {
         await git.push(cwd, "origin", currentBranch);
-      } catch {
-        // branch may already be pushed
+      } catch (err: unknown) {
+        debug("git push failed (branch may already be pushed)", {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
       const pr = await createPR({
         title,

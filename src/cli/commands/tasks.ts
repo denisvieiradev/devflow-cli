@@ -124,6 +124,9 @@ Tasks should be ordered by dependency. Each task should be independently impleme
           }
         }
       }
+      if (parsedTasks.length === 0) {
+        p.log.warn("Could not parse tasks from LLM response. The tasks.md file was saved but state has no tasks. You may need to run `devflow tasks` again or add tasks manually.");
+      }
       const feature = state.features[featureRef];
       if (feature) {
         state = {
