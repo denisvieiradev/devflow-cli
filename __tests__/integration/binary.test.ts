@@ -1,9 +1,11 @@
 import { describe, it, expect } from "@jest/globals";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const exec = promisify(execFile);
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const BINARY = join(__dirname, "..", "..", "dist", "index.js");
 
 describe("CLI binary (e2e)", () => {

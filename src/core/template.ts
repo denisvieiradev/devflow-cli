@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { fileExists } from "../infra/filesystem.js";
 import { debug } from "../infra/logger.js";
 
-// __dirname: provided natively in CJS (tests) and by tsup shims in ESM (runtime)
-declare const __dirname: string;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const BUNDLED_TEMPLATES_PATH = join(__dirname, "..", "..", "templates");
 
 export class TemplateEngine {

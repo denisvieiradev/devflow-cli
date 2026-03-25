@@ -3,62 +3,90 @@ import type { FeatureState } from "../../../src/core/types.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockChat = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockReadConfig = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockReadState = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockWriteState = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockUpdatePhase = jest.fn<any>((state: unknown) => state);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockCompleteTask = jest.fn<any>((state: unknown) => state);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockResolveFeatureRef = jest.fn<any>();
+const mockGetFeaturePath = (_cwd: string, ref: string) => `/tmp/.devflow/features/${ref}`;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockValidateApiKey = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockHandleLLMError = jest.fn<any>();
+const mockFileExists = jest.fn<() => Promise<boolean>>().mockResolvedValue(false);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockGetChangedFiles = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockAdd = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockGitCommit = jest.fn<any>();
+const mockGetLog = jest.fn<() => Promise<string>>().mockResolvedValue("abc1234 feat: task done");
+const mockCheckDrift = jest.fn<() => Promise<never[]>>().mockResolvedValue([]);
+const mockReadFile = jest.fn<() => Promise<string>>().mockResolvedValue("");
+const mockWriteFile = jest.fn<() => Promise<void>>().mockResolvedValue(undefined);
 
-jest.mock("../../../src/core/config.js", () => ({
-  readConfig: jest.fn(),
+jest.unstable_mockModule("../../../src/core/config.js", () => ({
+  readConfig: mockReadConfig,
 }));
 
-jest.mock("../../../src/core/state.js", () => ({
-  readState: jest.fn(),
-  writeState: jest.fn(),
-  updatePhase: jest.fn((state: unknown) => state),
-  completeTask: jest.fn((state: unknown) => state),
+jest.unstable_mockModule("../../../src/core/state.js", () => ({
+  readState: mockReadState,
+  writeState: mockWriteState,
+  updatePhase: mockUpdatePhase,
+  completeTask: mockCompleteTask,
 }));
 
-jest.mock("../../../src/core/pipeline.js", () => ({
-  resolveFeatureRef: jest.fn(),
-  getFeaturePath: (_cwd: string, ref: string) => `/tmp/.devflow/features/${ref}`,
+jest.unstable_mockModule("../../../src/core/pipeline.js", () => ({
+  resolveFeatureRef: mockResolveFeatureRef,
+  getFeaturePath: mockGetFeaturePath,
 }));
 
-jest.mock("../../../src/core/context.js", () => ({
+jest.unstable_mockModule("../../../src/core/context.js", () => ({
   ContextBuilder: jest.fn().mockImplementation(() => ({
     build: () => "mock context",
   })),
 }));
 
-jest.mock("../../../src/core/drift.js", () => ({
-  checkDrift: jest.fn<() => Promise<never[]>>().mockResolvedValue([]),
+jest.unstable_mockModule("../../../src/core/drift.js", () => ({
+  checkDrift: mockCheckDrift,
 }));
 
-jest.mock("../../../src/providers/claude.js", () => ({
+jest.unstable_mockModule("../../../src/providers/claude.js", () => ({
   ClaudeProvider: jest.fn().mockImplementation(() => ({
     chat: mockChat,
   })),
-  validateApiKey: jest.fn(),
-  handleLLMError: jest.fn(),
+  validateApiKey: mockValidateApiKey,
+  handleLLMError: mockHandleLLMError,
 }));
 
-jest.mock("../../../src/providers/model-router.js", () => ({
+jest.unstable_mockModule("../../../src/providers/model-router.js", () => ({
   resolveModelTier: () => "balanced",
 }));
 
-jest.mock("../../../src/infra/filesystem.js", () => ({
-  fileExists: jest.fn<() => Promise<boolean>>().mockResolvedValue(false),
+jest.unstable_mockModule("../../../src/infra/filesystem.js", () => ({
+  fileExists: mockFileExists,
 }));
 
-jest.mock("../../../src/infra/git.js", () => ({
-  getChangedFiles: jest.fn(),
-  add: jest.fn(),
-  commit: jest.fn(),
-  getLog: jest.fn<() => Promise<string>>().mockResolvedValue("abc1234 feat: task done"),
+jest.unstable_mockModule("../../../src/infra/git.js", () => ({
+  getChangedFiles: mockGetChangedFiles,
+  add: mockAdd,
+  commit: mockGitCommit,
+  getLog: mockGetLog,
 }));
 
-jest.mock("node:fs/promises", () => ({
-  readFile: jest.fn<() => Promise<string>>().mockResolvedValue(""),
-  writeFile: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+jest.unstable_mockModule("node:fs/promises", () => ({
+  readFile: mockReadFile,
+  writeFile: mockWriteFile,
 }));
 
-jest.mock("@clack/prompts", () => ({
+jest.unstable_mockModule("@clack/prompts", () => ({
   intro: jest.fn(),
   cancel: jest.fn(),
   outro: jest.fn(),
@@ -66,28 +94,8 @@ jest.mock("@clack/prompts", () => ({
   isCancel: () => false,
 }));
 
-import { readConfig } from "../../../src/core/config.js";
-import { readState, completeTask } from "../../../src/core/state.js";
-import { resolveFeatureRef } from "../../../src/core/pipeline.js";
-import { handleLLMError } from "../../../src/providers/claude.js";
-import * as git from "../../../src/infra/git.js";
-import * as p from "@clack/prompts";
-import { makeRunTasksCommand } from "../../../src/cli/commands/run-tasks.js";
-
-const mockReadConfig = readConfig as jest.MockedFunction<typeof readConfig>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockReadState = readState as jest.MockedFunction<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockResolveFeatureRef = resolveFeatureRef as jest.MockedFunction<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockGetChangedFiles = git.getChangedFiles as jest.MockedFunction<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockAdd = git.add as jest.MockedFunction<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockGitCommit = git.commit as jest.MockedFunction<any>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mockCompleteTask = completeTask as jest.MockedFunction<any>;
-const mockHandleLLMError = handleLLMError as jest.MockedFunction<typeof handleLLMError>;
+const p = await import("@clack/prompts");
+const { makeRunTasksCommand } = await import("../../../src/cli/commands/run-tasks.js");
 
 function makeFeature(overrides?: Partial<FeatureState>): FeatureState {
   return {
@@ -264,9 +272,6 @@ describe("run-tasks command", () => {
     });
     mockGetChangedFiles.mockResolvedValue(["src/file.ts"]);
     mockGitCommit.mockResolvedValue("abc1234");
-
-    const { updatePhase } = await import("../../../src/core/state.js");
-    const mockUpdatePhase = updatePhase as jest.MockedFunction<typeof updatePhase>;
 
     const cmd = makeRunTasksCommand();
     await cmd.parseAsync(["node", "test", "001"]);

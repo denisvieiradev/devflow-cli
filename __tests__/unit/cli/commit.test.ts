@@ -3,50 +3,54 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockChat = jest.fn<any>();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockReadConfig = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockValidateApiKey = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockHandleLLMError = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockGetStagedDiff = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockGitCommit = jest.fn<any>();
+const mockGetBranch = jest.fn<() => Promise<string>>().mockResolvedValue("feature/test");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockPush = jest.fn<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const mockConfirm = jest.fn<any>();
 
-jest.mock("../../../src/core/config.js", () => ({
-  readConfig: jest.fn(),
+jest.unstable_mockModule("../../../src/core/config.js", () => ({
+  readConfig: mockReadConfig,
 }));
 
-jest.mock("../../../src/providers/claude.js", () => ({
+jest.unstable_mockModule("../../../src/providers/claude.js", () => ({
   ClaudeProvider: jest.fn().mockImplementation(() => ({
     chat: mockChat,
   })),
-  validateApiKey: jest.fn(),
-  handleLLMError: jest.fn(),
+  validateApiKey: mockValidateApiKey,
+  handleLLMError: mockHandleLLMError,
 }));
 
-jest.mock("../../../src/providers/model-router.js", () => ({
+jest.unstable_mockModule("../../../src/providers/model-router.js", () => ({
   resolveModelTier: () => "fast",
 }));
 
-jest.mock("../../../src/infra/git.js", () => ({
-  getStagedDiff: jest.fn(),
-  commit: jest.fn(),
-  getBranch: jest.fn<() => Promise<string>>().mockResolvedValue("feature/test"),
-  push: jest.fn(),
+jest.unstable_mockModule("../../../src/infra/git.js", () => ({
+  getStagedDiff: mockGetStagedDiff,
+  commit: mockGitCommit,
+  getBranch: mockGetBranch,
+  push: mockPush,
 }));
 
-jest.mock("@clack/prompts", () => ({
+jest.unstable_mockModule("@clack/prompts", () => ({
   intro: jest.fn(),
   cancel: jest.fn(),
   outro: jest.fn(),
   log: { info: jest.fn(), success: jest.fn(), message: jest.fn() },
-  confirm: jest.fn(),
+  confirm: mockConfirm,
   isCancel: () => false,
 }));
 
-import { readConfig } from "../../../src/core/config.js";
-import { handleLLMError } from "../../../src/providers/claude.js";
-import * as git from "../../../src/infra/git.js";
-import * as p from "@clack/prompts";
-import { makeCommitCommand } from "../../../src/cli/commands/commit.js";
-
-const mockReadConfig = readConfig as jest.MockedFunction<typeof readConfig>;
-const mockGetStagedDiff = git.getStagedDiff as jest.MockedFunction<typeof git.getStagedDiff>;
-const mockGitCommit = git.commit as jest.MockedFunction<typeof git.commit>;
-const mockHandleLLMError = handleLLMError as jest.MockedFunction<typeof handleLLMError>;
+const { makeCommitCommand } = await import("../../../src/cli/commands/commit.js");
 
 describe("commit command", () => {
   const mockExit = jest.spyOn(process, "exit").mockImplementation((() => {
@@ -55,8 +59,7 @@ describe("commit command", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (p.confirm as any).mockResolvedValue(true);
+    mockConfirm.mockResolvedValue(true);
   });
 
   it("should exit when no config found", async () => {
@@ -83,8 +86,7 @@ describe("commit command", () => {
       content: "feat(core): add new feature",
       usage: { inputTokens: 10, outputTokens: 5 },
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (p.confirm as any).mockResolvedValue(true);
+    mockConfirm.mockResolvedValue(true);
     mockGitCommit.mockResolvedValue("abc1234");
 
     const cmd = makeCommitCommand();
@@ -105,8 +107,7 @@ describe("commit command", () => {
       content: "feat: something",
       usage: { inputTokens: 10, outputTokens: 5 },
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (p.confirm as any).mockResolvedValue(false);
+    mockConfirm.mockResolvedValue(false);
 
     const cmd = makeCommitCommand();
     await expect(cmd.parseAsync(["node", "test"])).rejects.toThrow("process.exit");
