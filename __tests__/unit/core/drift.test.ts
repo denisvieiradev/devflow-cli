@@ -18,11 +18,11 @@ describe("DriftDetector", () => {
   });
 
   describe("hashFile", () => {
-    it("should return MD5 hash of file content", async () => {
+    it("should return SHA-256 hash of file content", async () => {
       const filePath = join(tempDir, "test.md");
       await writeFile(filePath, "hello world");
       const hash = await hashFile(filePath);
-      const expected = createHash("md5").update("hello world").digest("hex");
+      const expected = createHash("sha256").update("hello world").digest("hex");
       expect(hash).toBe(expected);
     });
   });
@@ -55,7 +55,7 @@ describe("DriftDetector", () => {
 
     it("should return no warnings when hashes match", async () => {
       const prdContent = "# PRD Content";
-      const prdHash = createHash("md5").update(prdContent).digest("hex");
+      const prdHash = createHash("sha256").update(prdContent).digest("hex");
       const featurePath = join(tempDir, ".devflow", "features", "001-auth");
       await mkdir(featurePath, { recursive: true });
       await writeFile(join(featurePath, "prd.md"), prdContent);
@@ -68,7 +68,7 @@ describe("DriftDetector", () => {
     });
 
     it("should return warning when PRD was modified after techspec", async () => {
-      const originalHash = createHash("md5").update("original content").digest("hex");
+      const originalHash = createHash("sha256").update("original content").digest("hex");
       const featurePath = join(tempDir, ".devflow", "features", "001-auth");
       await mkdir(featurePath, { recursive: true });
       await writeFile(join(featurePath, "prd.md"), "modified content");

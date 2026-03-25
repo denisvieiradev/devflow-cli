@@ -48,17 +48,24 @@ export type Phase =
   | "pr_created"
   | "done";
 
-export const PHASE_ORDER: Phase[] = [
-  "initialized",
-  "prd_created",
-  "techspec_created",
-  "tasks_created",
-  "in_progress",
-  "testing",
-  "reviewing",
-  "pr_created",
-  "done",
-];
+export interface PhaseInfo {
+  label: string;
+  nextStep: string;
+}
+
+export const PHASE_CONFIG: Record<Phase, PhaseInfo> = {
+  initialized: { label: "Initialized", nextStep: "devflow prd <desc>" },
+  prd_created: { label: "PRD Created", nextStep: "devflow techspec <ref>" },
+  techspec_created: { label: "Tech Spec Created", nextStep: "devflow tasks <ref>" },
+  tasks_created: { label: "Tasks Created", nextStep: "devflow run-tasks <ref>" },
+  in_progress: { label: "In Progress", nextStep: "devflow test <ref>" },
+  testing: { label: "Testing", nextStep: "devflow review <ref>" },
+  reviewing: { label: "Reviewing", nextStep: "devflow pr <ref>" },
+  pr_created: { label: "PR Created", nextStep: "devflow done <ref>" },
+  done: { label: "Done", nextStep: "Complete" },
+};
+
+export const PHASE_ORDER: Phase[] = Object.keys(PHASE_CONFIG) as Phase[];
 
 export interface ArtifactMeta {
   path: string;

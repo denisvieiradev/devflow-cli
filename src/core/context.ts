@@ -11,13 +11,10 @@ const LIGHT_MODE_TOKEN_LIMIT = 4000;
 const LIGHT_MODE_CHAR_LIMIT = LIGHT_MODE_TOKEN_LIMIT * ESTIMATED_CHARS_PER_TOKEN;
 
 const PRIORITY_SECTIONS: Record<string, string[]> = {
-  prd: [],
   techspec: ["Funcionalidades", "Requirements", "Restrições", "Constraints", "Histórias", "User Stories"],
   tasks: ["Interfaces", "Sequenciamento", "Sequencing", "Componentes", "Components", "Implementation"],
   "run-tasks": ["Interfaces", "Data Models", "Modelos de Dados", "Implementation"],
   review: ["Interfaces", "Testes", "Testing", "Restrições", "Constraints"],
-  commit: [],
-  pr: [],
 };
 
 export class ContextBuilder {

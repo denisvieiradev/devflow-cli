@@ -4,6 +4,7 @@ import { fileExists } from "../infra/filesystem.js";
 import type { DevflowState } from "./types.js";
 
 const FEATURES_DIR = ".devflow/features";
+const MAX_SLUG_LENGTH = 40;
 
 export function getNextFeatureNumber(state: DevflowState): number {
   const numbers = Object.values(state.features).map((f) => f.number);
@@ -18,7 +19,7 @@ export function generateSlug(description: string): string {
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 40)
+    .slice(0, MAX_SLUG_LENGTH)
     .replace(/-$/, "");
 }
 
@@ -43,8 +44,16 @@ function normalizeRef(ref: string): string {
 }
 
 function matchesRef(key: string, ref: string): boolean {
+  if (key === ref) return true;
   const normalized = normalizeRef(ref);
-  return key === ref || key.startsWith(`${normalized}-`);
+  // Match by number prefix: "1" or "001" → "001-auth"
+  if (/^\d+$/.test(ref)) {
+    return key.startsWith(`${normalized}-`);
+  }
+  // Match by slug prefix: "auth-oauth" → "001-auth-oauth"
+  // Strip leading number prefix from key, then check startsWith
+  const keySlug = key.replace(/^\d+-/, "");
+  return keySlug.startsWith(ref);
 }
 
 export async function resolveFeatureRef(
