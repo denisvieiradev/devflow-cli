@@ -5,3 +5,5 @@ coverage/
 .devflow/state.json
 *.tsbuildinfo
 .DS_Store
+docs/.astro/
+docs/package-lock.json
