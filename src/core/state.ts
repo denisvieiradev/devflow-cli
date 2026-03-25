@@ -1,6 +1,6 @@
 import { join } from "node:path";
-import { unlink } from "node:fs/promises";
-import { fileExists, readJSON, writeJSON } from "../infra/filesystem.js";
+import { open, unlink } from "node:fs/promises";
+import { fileExists, readJSON, writeJSON, ensureDir } from "../infra/filesystem.js";
 import { debug } from "../infra/logger.js";
 import {
   EMPTY_STATE,
@@ -15,6 +15,8 @@ import {
 const STATE_DIR = ".devflow";
 const STATE_FILE = "state.json";
 const LOCK_FILE = ".lock";
+const LOCK_MAX_RETRIES = 3;
+const LOCK_RETRY_DELAY_MS = 100;
 
 function getStatePath(projectRoot: string): string {
   return join(projectRoot, STATE_DIR, STATE_FILE);
@@ -24,14 +26,33 @@ function getLockPath(projectRoot: string): string {
   return join(projectRoot, STATE_DIR, LOCK_FILE);
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function acquireLock(projectRoot: string): Promise<void> {
   const lockPath = getLockPath(projectRoot);
-  if (await fileExists(lockPath)) {
-    throw new Error(
-      `Lock file exists at ${lockPath}. Another process may be writing state.`,
-    );
+  await ensureDir(join(projectRoot, STATE_DIR));
+  for (let attempt = 0; attempt < LOCK_MAX_RETRIES; attempt++) {
+    try {
+      const fd = await open(lockPath, "wx");
+      await fd.writeFile(JSON.stringify({ pid: process.pid, timestamp: new Date().toISOString() }));
+      await fd.close();
+      return;
+    } catch (err: unknown) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === "EEXIST") {
+        if (attempt < LOCK_MAX_RETRIES - 1) {
+          await sleep(LOCK_RETRY_DELAY_MS * (attempt + 1));
+          continue;
+        }
+        throw new Error(
+          `Lock file exists at ${lockPath}. Another process may be writing state.`,
+        );
+      }
+      throw err;
+    }
   }
-  await writeJSON(lockPath, { pid: process.pid, timestamp: new Date().toISOString() });
 }
 
 async function releaseLock(projectRoot: string): Promise<void> {
@@ -49,7 +70,7 @@ export async function readState(
   const statePath = getStatePath(projectRoot);
   if (!(await fileExists(statePath))) {
     debug("State file not found, returning empty state", { path: statePath });
-    return { ...EMPTY_STATE, features: {} };
+    return { ...EMPTY_STATE };
   }
   return readJSON<DevflowState>(statePath);
 }
@@ -74,7 +95,7 @@ export async function initState(projectRoot: string): Promise<void> {
     debug("State already exists", { path: statePath });
     return;
   }
-  await writeState(projectRoot, { ...EMPTY_STATE, features: {} });
+  await writeState(projectRoot, { ...EMPTY_STATE });
 }
 
 export function addFeature(

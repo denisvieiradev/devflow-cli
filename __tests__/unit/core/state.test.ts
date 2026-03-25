@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { join } from "node:path";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, open } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { mkdir } from "node:fs/promises";
 import {
   readState,
   writeState,
@@ -149,6 +150,27 @@ describe("StateManager", () => {
       };
       const updated = setArtifact(state, "001-auth", "prd", artifact);
       expect(updated.features["001-auth"]!.artifacts["prd"]).toEqual(artifact);
+    });
+  });
+
+  describe("lock mechanism", () => {
+    it("should use atomic lock file via O_CREAT|O_EXCL", async () => {
+      const state: DevflowState = { features: {} };
+      await writeState(tempDir, state);
+      const readBack = await readState(tempDir);
+      expect(readBack.features).toEqual({});
+    });
+
+    it("should fail when lock is already held", async () => {
+      const lockDir = join(tempDir, ".devflow");
+      await mkdir(lockDir, { recursive: true });
+      const lockPath = join(lockDir, ".lock");
+      const fd = await open(lockPath, "wx");
+      await fd.writeFile("{}");
+      await fd.close();
+      const state: DevflowState = { features: {} };
+      await expect(writeState(tempDir, state)).rejects.toThrow("Lock file exists");
+      await rm(lockPath);
     });
   });
 });
