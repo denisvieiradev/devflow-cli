@@ -1,13 +1,13 @@
-# devflow-ai-kit
+# devflow-cli
 
 **Stop writing PRDs, specs, and commit messages by hand.** devflow automates your entire dev workflow — from idea to merged PR.
 
-[![npm version](https://img.shields.io/npm/v/devflow-ai-kit)](https://www.npmjs.com/package/devflow-ai-kit)
-[![npm downloads](https://img.shields.io/npm/dm/devflow-ai-kit)](https://www.npmjs.com/package/devflow-ai-kit)
+[![npm version](https://img.shields.io/npm/v/devflow-cli)](https://www.npmjs.com/package/devflow-cli)
+[![npm downloads](https://img.shields.io/npm/dm/devflow-cli)](https://www.npmjs.com/package/devflow-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js >= 18](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org)
-[![CI](https://github.com/denisvieiradev/devflow-ai-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/denisvieiradev/devflow-ai-kit/actions/workflows/ci.yml)
+[![CI](https://github.com/denisvieiradev/devflow-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/denisvieiradev/devflow-cli/actions/workflows/ci.yml)
 
 ---
 
@@ -16,7 +16,7 @@ You describe a feature in plain English. devflow generates a PRD, creates a tech
 You can also use each command standalone — smart commits, AI code review, auto-generated PRs, and automated releases work without the full pipeline.
 
 ```bash
-npm install -g devflow-ai-kit
+npm install -g devflow-cli
 devflow init
 ```
 
@@ -33,6 +33,14 @@ describe → plan → build → validate → ship
 | **Build** | `devflow run-tasks` | Code changes with atomic commits per task |
 | **Validate** | `devflow test` → `devflow review` | Test plan + code review (Critical / Suggestions / Nitpicks) |
 | **Ship** | `devflow pr` → `devflow release` → `devflow done` | Pull request, versioned release, feature closed |
+
+### Why devflow?
+
+- **End-to-end** — from idea to merged PR in one CLI, no context switching
+- **Cost-aware** — 3-tier model routing (Opus / Sonnet / Haiku) uses the cheapest model that fits each task
+- **Safe** — drift detection, sensitive file filtering, file locking, and retry logic built in
+- **Transparent** — token usage reported after every LLM call so you always know what you're spending
+- **Flexible** — use the full pipeline or pick any command standalone
 
 ## Quick Start
 
@@ -72,13 +80,13 @@ devflow status              # Check progress of all tracked features
 
 | Command | Description |
 |---|---|
-| `devflow init` | Initialize devflow — auto-detects language, framework, test runner, and CI |
+| `devflow init [--force]` | Initialize devflow — auto-detects language, framework, test runner, and CI |
 | `devflow prd <description>` | Generate a structured PRD with interactive clarification questions |
 | `devflow techspec [ref]` | Generate technical specification from an approved PRD |
 | `devflow tasks [ref]` | Decompose techspec into numbered, implementable tasks |
 | `devflow run-tasks [ref]` | Execute pending tasks sequentially with atomic commits |
 | `devflow test [ref]` | Generate test plan and optionally run tests |
-| `devflow review [ref]` | Automated code review with categorized findings |
+| `devflow review [ref] [--base branch]` | Automated code review with categorized findings |
 | `devflow pr [--base branch]` | Create a GitHub PR with auto-generated title and description |
 | `devflow release [ref]` | Version bump, changelog, release notes, git tag, GitHub release |
 | `devflow done [ref]` | Mark feature as complete and finalize |
@@ -88,10 +96,9 @@ devflow status              # Check progress of all tracked features
 | Command | Description |
 |---|---|
 | `devflow commit [--push]` | Intelligent commit messages with multi-context commit plan detection |
-| `devflow release` | Standalone release — same as pipeline, no feature reference needed |
 | `devflow status` | Show status of all tracked features with phases and pending tasks |
 
-> `[ref]` is the feature number (e.g., `001`) or slug. If omitted, devflow resolves the current feature from context.
+> `[ref]` is the feature number (e.g., `001`) or slug. If omitted, devflow resolves the current feature from context. All pipeline commands also work standalone without a feature reference.
 
 ## Features
 
@@ -146,13 +153,36 @@ devflow release
 
 It generates a **technical changelog** (Keep a Changelog format in `CHANGELOG.md`), **client-facing release notes** (in your chosen language), a **git tag**, and a **GitHub release** via `gh` CLI.
 
+### Intelligent Model Routing
+
+Each command is routed to the optimal Claude model tier — you pay for Opus only when the task needs it:
+
+| Commands | Model Tier | Why |
+|---|---|---|
+| `prd`, `techspec`, `review` | Powerful (Opus) | Complex reasoning and analysis |
+| `tasks`, `run-tasks`, `test`, `release` | Balanced (Sonnet) | Good quality at lower cost |
+| `init`, `commit`, `pr`, `done`, `status` | Fast (Haiku) | Simple tasks, minimal cost |
+
+Model IDs are configurable in `.devflow/config.json` if you want to pin specific versions.
+
+### Drift Detection
+
+devflow tracks SHA-256 hashes of your artifacts (PRD, techspec, tasks). When you modify an upstream artifact after downstream artifacts were generated, it warns you to regenerate:
+
+```
+⚠ PRD was modified after downstream artifacts were generated. Consider regenerating techspec and tasks.
+```
+
 ### More
 
-- **Project auto-detection** — Detects language, framework, test runner, and CI on `devflow init`
-- **State persistence** — Tracks feature progress, tasks, and artifacts in `.devflow/` with file locking
-- **Customizable templates** — Override PRD, techspec, tasks, commit, PR, and release templates per project
-- **Context modes** — Normal (full documents) or light (chunked, ~4000 tokens) for large projects
-- **Sensitive file filtering** — Automatically excludes `.env`, credentials, keys, and secrets from commits
+- **Project auto-detection** — Detects language, framework, test runner, and CI on `devflow init` so you skip manual configuration
+- **State persistence** — Tracks feature progress, tasks, and artifacts in `.devflow/` with file locking to prevent concurrent write conflicts
+- **Customizable templates** — Override PRD, techspec, tasks, commit, PR, and release templates per project using `{{variable}}` interpolation
+- **Context modes** — Normal (full documents) or light (chunked by headings with priority sorting, ~4000 tokens) for large projects and cost optimization
+- **Sensitive file filtering** — Automatically excludes `.env`, credentials, keys, and secrets from auto-commits
+- **Token usage reporting** — Every LLM call reports input/output tokens so you can track and control API costs
+- **Retry with backoff** — API calls automatically retry up to 3 times with exponential backoff for rate limits and transient errors
+- **Interactive file selection** — `devflow commit` offers file selection when nothing is staged, so you never have to leave the flow
 
 ## How It Works
 
@@ -210,14 +240,24 @@ Created by `devflow init`:
 
 ```json
 {
-  "provider": "anthropic",
-  "models": { "fast": "haiku", "balanced": "sonnet", "powerful": "opus" },
+  "provider": "claude",
+  "models": {
+    "fast": "claude-haiku-4-5-20251001",
+    "balanced": "claude-sonnet-4-5-20250929",
+    "powerful": "claude-opus-4-5-20250929"
+  },
+  "language": "en",
+  "commitConvention": "conventional",
+  "branchPattern": "feature/{{slug}}",
+  "templatesPath": ".devflow/templates",
   "contextMode": "normal",
-  "language": "typescript",
-  "framework": "next",
-  "testFramework": "jest",
-  "ci": "github-actions",
-  "commitConvention": "conventional"
+  "project": {
+    "name": "my-app",
+    "language": "typescript",
+    "framework": "next",
+    "testFramework": "jest",
+    "hasCI": true
+  }
 }
 ```
 
@@ -226,7 +266,7 @@ Created by `devflow init`:
 | Mode | Behavior | Best For |
 |---|---|---|
 | `normal` | Full documents in LLM prompts | Small to medium projects |
-| `light` | Chunked by headings, ~4000 tokens | Large projects, cost optimization |
+| `light` | Chunks documents by Markdown headings, sorts by priority, caps at ~4000 tokens | Large projects, cost optimization |
 
 ### Custom Templates
 
@@ -252,7 +292,7 @@ Templates use `{{variable}}` interpolation syntax.
 - [ ] Plugin system for custom pipeline phases
 - [ ] Deeper CI/CD integration (auto-trigger pipelines)
 - [ ] Interactive mode with step-by-step prompts
-- [ ] Drift detection (warn when upstream artifacts change)
+- [x] Drift detection (warn when upstream artifacts change)
 - [ ] Parallel task execution
 - [ ] Web dashboard for feature tracking
 - [ ] Monorepo support
@@ -269,7 +309,7 @@ To report a vulnerability, please see our [Security Policy](SECURITY.md).
 
 ## Support the Developer
 
-If you find devflow-ai-kit useful, consider supporting its development:
+If you find devflow-cli useful, consider supporting its development:
 
 - [Buy me a coffee](https://buymeacoffee.com/denisvieiradev)
 - **PIX (Brazil):** `denisvieira05@gmail.com`

@@ -1,5 +1,5 @@
 ---
-title: devflow-ai-kit
+title: devflow-cli
 description: CLI pipeline for structured software development — from PRD to merge
 ---
 
@@ -16,7 +16,7 @@ A complete development pipeline in your terminal. From PRD to merge — powered 
 ## Quick Start
 
 ```bash
-npm install -g devflow-ai-kit
+npm install -g devflow-cli
 cd my-project
 devflow init
 devflow prd "add OAuth authentication"

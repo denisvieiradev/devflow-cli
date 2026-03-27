@@ -1,4 +1,4 @@
-# Contributing to devflow-ai-kit
+# Contributing to devflow-cli
 
 Thank you for your interest in contributing! By participating, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
@@ -13,8 +13,8 @@ Thank you for your interest in contributing! By participating, you agree to abid
 ### Setup
 
 ```bash
-git clone https://github.com/<your-username>/devflow-ai-kit.git
-cd devflow-ai-kit
+git clone https://github.com/<your-username>/devflow-cli.git
+cd devflow-cli
 npm install
 ```
 
@@ -114,7 +114,7 @@ devflow automatically selects the optimal model for each operation:
 
 ## Reporting Issues
 
-Use [GitHub Issues](https://github.com/denisvieiradev/devflow-ai-kit/issues) to report bugs or request features. Include:
+Use [GitHub Issues](https://github.com/denisvieiradev/devflow-cli/issues) to report bugs or request features. Include:
 
 - Steps to reproduce
 - Expected vs actual behavior

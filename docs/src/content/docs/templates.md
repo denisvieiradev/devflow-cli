@@ -1,11 +1,11 @@
 ---
 title: Templates
-description: Customize devflow-ai-kit templates
+description: Customize devflow-cli templates
 ---
 
 ## How Templates Work
 
-devflow-ai-kit uses Markdown templates with `{{variable}}` interpolation. When generating content, the CLI:
+devflow-cli uses Markdown templates with `{{variable}}` interpolation. When generating content, the CLI:
 
 1. Checks for a project override in `.devflow/templates/`
 2. Falls back to bundled default templates

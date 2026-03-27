@@ -20,4 +20,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Standalone `devflow commit` command with `--push` flag
 - `devflow status` command for feature tracking
 
-[1.0.0]: https://github.com/denisvieiradev/devflow-ai-kit/releases/tag/v1.0.0
+[1.0.0]: https://github.com/denisvieiradev/devflow-cli/releases/tag/v1.0.0

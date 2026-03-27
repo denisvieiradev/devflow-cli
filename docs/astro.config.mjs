@@ -4,7 +4,7 @@ import starlight from "@astrojs/starlight";
 export default defineConfig({
   integrations: [
     starlight({
-      title: "devflow-ai-kit",
+      title: "devflow-cli",
       description:
         "CLI pipeline for structured software development — from PRD to merge",
       sidebar: [

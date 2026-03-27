@@ -1,5 +1,5 @@
 {
-  "name": "devflow-ai-kit",
+  "name": "devflow-cli",
   "version": "1.0.0",
   "description": "CLI pipeline for structured software development — from PRD to merge",
   "type": "module",
@@ -31,12 +31,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/denisvieiradev/devflow-ai-kit.git"
+    "url": "git+https://github.com/denisvieiradev/devflow-cli.git"
   },
   "bugs": {
-    "url": "https://github.com/denisvieiradev/devflow-ai-kit/issues"
+    "url": "https://github.com/denisvieiradev/devflow-cli/issues"
   },
-  "homepage": "https://github.com/denisvieiradev/devflow-ai-kit#readme",
+  "homepage": "https://github.com/denisvieiradev/devflow-cli#readme",
   "engines": {
     "node": ">=18"
   },

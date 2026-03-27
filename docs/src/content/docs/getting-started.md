@@ -1,12 +1,12 @@
 ---
 title: Getting Started
-description: Install and set up devflow-ai-kit in your project
+description: Install and set up devflow-cli in your project
 ---
 
 ## Installation
 
 ```bash
-npm install -g devflow-ai-kit
+npm install -g devflow-cli
 ```
 
 ## Prerequisites
@@ -52,7 +52,7 @@ devflow done 001
 
 ## Pipeline Overview
 
-devflow-ai-kit guides you through 9 phases of development:
+devflow-cli guides you through 9 phases of development:
 
 1. **Init** — Detect project stack and configure
 2. **PRD** — Generate product requirements document

@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: Configure devflow-ai-kit for your project
+description: Configure devflow-cli for your project
 ---
 
 ## Config File
