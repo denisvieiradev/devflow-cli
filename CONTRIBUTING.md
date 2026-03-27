@@ -112,6 +112,29 @@ devflow automatically selects the optimal model for each operation:
 - Update the README if you add new commands or change behavior
 - Never commit `.devflow/.env` or API keys
 
+## Releasing a New Version
+
+> Only maintainers with npm publish access can release new versions.
+
+1. **Ensure `main` is green** — all CI checks must pass and there are no uncommitted changes.
+
+2. **Run `devflow release`** — this handles the entire release process interactively:
+   ```bash
+   devflow release
+   ```
+   The command will:
+   - Analyze commits since the last tag and suggest a version bump (patch/minor/major)
+   - Generate a changelog entry and update `CHANGELOG.md`
+   - Generate release notes in your chosen language
+   - Bump the version in `package.json`
+   - Create a git commit (`chore(release): v<version>`) and annotated tag
+   - Optionally push to remote and create a GitHub Release
+
+3. **Publish to npm** — the `prepublishOnly` hook automatically runs `lint → test → build` before publishing:
+   ```bash
+   npm publish
+   ```
+
 ## Reporting Issues
 
 Use [GitHub Issues](https://github.com/denisvieiradev/devflow-cli/issues) to report bugs or request features. Include:
