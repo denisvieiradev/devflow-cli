@@ -14,7 +14,7 @@ import { makeStatusCommand } from "./commands/status.js";
 import { makeReleaseCommand } from "./commands/release.js";
 import { loadEnv } from "../infra/env.js";
 
-function loadVersion(): string {
+export function loadVersion(): string {
   try {
     const require = createRequire(import.meta.url);
     const pkg = require("../package.json") as { version?: string };

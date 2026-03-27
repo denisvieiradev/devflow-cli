@@ -294,6 +294,7 @@ Templates use `{{variable}}` interpolation syntax.
 - [ ] Interactive mode with step-by-step prompts
 - [x] Drift detection (warn when upstream artifacts change)
 - [ ] Parallel task execution
+- [ ] Claude Code integration (install devflow as a plugin/skill inside Claude Code)
 - [ ] Web dashboard for feature tracking
 - [ ] Monorepo support
 

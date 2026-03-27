@@ -28,6 +28,33 @@ npm install
 | `npm run test:coverage` | Run tests with coverage report (80% threshold) |
 | `npm run lint` | Type checking (`tsc --noEmit`) |
 
+### Running Locally
+
+To test your local changes as the `devflow` CLI command:
+
+```bash
+# Build the project
+npm run build
+
+# Link it globally — makes `devflow` point to your local build
+npm link
+
+# Now you can use `devflow` anywhere and it runs your local version
+devflow --help
+```
+
+For active development, use watch mode so the build updates automatically as you edit:
+
+```bash
+npm run dev
+```
+
+You can also run the local build directly without linking:
+
+```bash
+node dist/index.js
+```
+
 ## Development Workflow
 
 1. **Fork** the repository and create a branch from `main`:
