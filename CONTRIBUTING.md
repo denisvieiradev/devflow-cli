@@ -58,12 +58,50 @@ npm install
 
 ```
 src/
-├── cli/           # CLI entry point, Commander.js setup, commands
-├── core/          # Types, config, state, pipeline, templates, scanner
-├── providers/     # LLM provider interface and implementations
-├── infra/         # Filesystem, git, GitHub, env, logger utilities
-└── templates/     # Default prompt templates (prd, techspec, tasks, etc.)
+├── cli/
+│   ├── index.ts              # Entry point (shebang + bootstrap)
+│   ├── program.ts            # Commander.js setup, loads all commands
+│   ├── context.ts            # Shared context helper for feature resolution
+│   └── commands/             # One file per command (init, prd, techspec, ...)
+├── core/
+│   ├── types.ts              # Type definitions (Config, State, Phases, Tasks)
+│   ├── config.ts             # Configuration management
+│   ├── state.ts              # Feature state persistence with file locking
+│   ├── pipeline.ts           # Feature numbering, slug generation, reference resolution
+│   ├── template.ts           # Template engine with {{variable}} interpolation
+│   ├── context.ts            # ContextBuilder for smart document chunking
+│   ├── scanner.ts            # Project auto-detection (language, framework, tests, CI)
+│   └── drift.ts              # Artifact change detection
+├── providers/
+│   ├── types.ts              # LLMProvider interface
+│   ├── claude.ts             # Anthropic SDK implementation
+│   └── model-router.ts       # Model selection by task complexity
+├── infra/
+│   ├── env.ts                # .devflow/.env loading and writing
+│   ├── filesystem.ts         # File operations (read/write JSON, existence checks)
+│   ├── git.ts                # Git operations wrapper
+│   ├── github.ts             # GitHub PR creation and releases via gh CLI
+│   └── logger.ts             # Debug logging
+└── templates/
+    ├── prd.md
+    ├── techspec.md
+    ├── tasks.md
+    ├── commit.md
+    ├── pr.md
+    ├── release-version.md
+    ├── release-changelog.md
+    └── release-notes.md
 ```
+
+## Model Routing
+
+devflow automatically selects the optimal model for each operation:
+
+| Tier | Model | Used For |
+|---|---|---|
+| **Fast** | Haiku | Commits, PR generation, task execution guidance |
+| **Balanced** | Sonnet | PRD, techspec, tasks, code review, test plans, releases |
+| **Powerful** | Opus | Reserved for high-complexity analysis |
 
 ## Guidelines
 
