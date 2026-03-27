@@ -11,7 +11,7 @@ const BASE_DELAY_MS = 1000;
 
 export function validateApiKey(): void {
   if (!process.env.ANTHROPIC_API_KEY) {
-    p.cancel("ANTHROPIC_API_KEY not set. Run: export ANTHROPIC_API_KEY=your-key");
+    p.cancel("ANTHROPIC_API_KEY not set. Run `devflow init` to configure, or: export ANTHROPIC_API_KEY=your-key");
     process.exit(1);
   }
 }

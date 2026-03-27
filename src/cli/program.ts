@@ -11,6 +11,8 @@ import { makeReviewCommand } from "./commands/review.js";
 import { makePrCommand } from "./commands/pr.js";
 import { makeDoneCommand } from "./commands/done.js";
 import { makeStatusCommand } from "./commands/status.js";
+import { makeReleaseCommand } from "./commands/release.js";
+import { loadEnv } from "../infra/env.js";
 
 function loadVersion(): string {
   try {
@@ -30,6 +32,9 @@ export function createProgram(): Command {
       "CLI pipeline for structured software development — from PRD to merge",
     )
     .version(loadVersion());
+  program.hook("preAction", async () => {
+    await loadEnv(process.cwd());
+  });
   program.addCommand(makeInitCommand());
   program.addCommand(makePrdCommand());
   program.addCommand(makeTechspecCommand());
@@ -41,5 +46,6 @@ export function createProgram(): Command {
   program.addCommand(makePrCommand());
   program.addCommand(makeDoneCommand());
   program.addCommand(makeStatusCommand());
+  program.addCommand(makeReleaseCommand());
   return program;
 }

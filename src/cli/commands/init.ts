@@ -7,6 +7,7 @@ import { initState } from "../../core/state.js";
 import { scanProject } from "../../core/scanner.js";
 import { fileExists } from "../../infra/filesystem.js";
 import { DEFAULT_CONFIG, type ContextMode } from "../../core/types.js";
+import { writeEnvVar } from "../../infra/env.js";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -78,6 +79,49 @@ export function makeInitCommand(): Command {
         p.cancel("Init cancelled.");
         process.exit(0);
       }
+      let apiKey: string | undefined;
+      const existingKey = process.env.ANTHROPIC_API_KEY;
+      if (existingKey) {
+        const masked = existingKey.length > 8
+          ? `${existingKey.slice(0, 7)}...${existingKey.slice(-4)}`
+          : "****";
+        const keepKey = await p.confirm({
+          message: `ANTHROPIC_API_KEY already set (${masked}). Keep it?`,
+        });
+        if (p.isCancel(keepKey)) {
+          p.cancel("Init cancelled.");
+          process.exit(0);
+        }
+        if (!keepKey) {
+          const newKey = await p.password({
+            message: "Anthropic API Key",
+          });
+          if (p.isCancel(newKey)) {
+            p.cancel("Init cancelled.");
+            process.exit(0);
+          }
+          apiKey = newKey;
+        }
+      } else {
+        const wantsKey = await p.confirm({
+          message: "Configure Anthropic API Key now?",
+          initialValue: true,
+        });
+        if (p.isCancel(wantsKey)) {
+          p.cancel("Init cancelled.");
+          process.exit(0);
+        }
+        if (wantsKey) {
+          const newKey = await p.password({
+            message: "Anthropic API Key",
+          });
+          if (p.isCancel(newKey)) {
+            p.cancel("Init cancelled.");
+            process.exit(0);
+          }
+          apiKey = newKey;
+        }
+      }
       const config = {
         ...DEFAULT_CONFIG,
         provider: provider as "claude",
@@ -86,11 +130,16 @@ export function makeInitCommand(): Command {
       };
       await writeConfig(cwd, config);
       await initState(cwd);
+      if (apiKey) {
+        await writeEnvVar(cwd, "ANTHROPIC_API_KEY", apiKey);
+        process.env.ANTHROPIC_API_KEY = apiKey;
+        p.log.success("API key saved to .devflow/.env");
+      }
       if (!(await hasGhCli())) {
         p.log.warn("GitHub CLI (gh) not found. `devflow pr` will not work until installed.");
       }
-      if (!(await isInGitignore(cwd, ".devflow/config.json"))) {
-        p.log.warn("Consider adding .devflow/config.json to .gitignore (may contain API key references).");
+      if (!(await isInGitignore(cwd, ".devflow/.env"))) {
+        p.log.warn("Add .devflow/.env to .gitignore to avoid committing secrets.");
       }
       p.outro("Config saved to .devflow/config.json");
     });
