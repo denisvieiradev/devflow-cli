@@ -7,3 +7,21 @@ coverage/
 .DS_Store
 docs/.astro/
 docs/package-lock.json
+
+# Environment and secrets
+.env
+.env.*
+.devflow/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+
+# Debug logs
+npm-debug.log*
