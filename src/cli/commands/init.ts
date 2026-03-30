@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import * as p from "@clack/prompts";
-import { execFile } from "node:child_process";
+import { execFile, execSync } from "node:child_process";
 import { promisify } from "node:util";
 import { readConfig, writeConfig } from "../../core/config.js";
 import { initState } from "../../core/state.js";
@@ -8,7 +8,7 @@ import { scanProject } from "../../core/scanner.js";
 import { fileExists } from "../../infra/filesystem.js";
 import { DEFAULT_CONFIG, type ContextMode, type DevflowConfig } from "../../core/types.js";
 import { writeEnvVar } from "../../infra/env.js";
-import { validateClaudeCli } from "../../providers/claude-code.js";
+import { resolveClaudeBinary, validateClaudeCli } from "../../providers/claude-code.js";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -82,9 +82,33 @@ export function makeInitCommand(): Command {
         process.exit(0);
       }
       let apiKey: string | undefined;
+      let claudeCliPath: string | undefined;
       if (provider === "claude-code-cli") {
-        validateClaudeCli();
-        p.log.success("Claude Code CLI detected.");
+        const resolved = resolveClaudeBinary();
+        if (resolved) {
+          p.log.success(`Claude Code CLI detected at ${resolved}`);
+          claudeCliPath = resolved;
+        } else {
+          p.log.warn("Claude Code CLI not found in PATH or common locations.");
+          const customPath = await p.text({
+            message: "Enter the full path to the claude binary",
+            placeholder: "/path/to/claude",
+          });
+          if (p.isCancel(customPath) || !customPath) {
+            p.cancel(
+              "Claude Code CLI is required.\nInstall it: npm install -g @anthropic-ai/claude-code\nOr switch to API provider: devflow init --force",
+            );
+            process.exit(1);
+          }
+          try {
+            execSync(`"${customPath}" --version`, { stdio: "pipe" });
+            claudeCliPath = customPath;
+            p.log.success(`Claude Code CLI verified at ${customPath}`);
+          } catch {
+            p.cancel(`Could not run claude at "${customPath}". Check the path and try again.`);
+            process.exit(1);
+          }
+        }
       } else {
         const existingKey = process.env.ANTHROPIC_API_KEY;
         if (existingKey) {
@@ -132,6 +156,7 @@ export function makeInitCommand(): Command {
       const config = {
         ...DEFAULT_CONFIG,
         provider: provider as DevflowConfig["provider"],
+        ...(claudeCliPath ? { claudeCliPath } : {}),
         contextMode: contextMode as ContextMode,
         project: scan,
       };

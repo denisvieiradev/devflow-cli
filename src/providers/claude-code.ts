@@ -152,7 +152,6 @@ export class ClaudeCodeProvider implements LLMProvider {
       const { stdout } = await execFileAsync(this.claudeBinaryPath, args, {
         timeout: DEFAULT_TIMEOUT_MS,
         maxBuffer: 10 * 1024 * 1024,
-        shell: true,
       });
       return this.parseResponse(stdout);
     } catch (err) {
@@ -168,7 +167,6 @@ export class ClaudeCodeProvider implements LLMProvider {
       const child = spawn(this.claudeBinaryPath, args, {
         stdio: ["pipe", "pipe", "pipe"],
         timeout: DEFAULT_TIMEOUT_MS,
-        shell: true,
       });
 
       let stdout = "";
