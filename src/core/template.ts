@@ -5,7 +5,7 @@ import { fileExists } from "../infra/filesystem.js";
 import { debug } from "../infra/logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const BUNDLED_TEMPLATES_PATH = join(__dirname, "..", "..", "templates");
+const BUNDLED_TEMPLATES_PATH = join(__dirname, "..", "templates");
 
 export class TemplateEngine {
   private readonly projectTemplatesPath: string;
