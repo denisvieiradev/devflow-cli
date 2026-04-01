@@ -86,12 +86,8 @@ export async function fetch(cwd: string, remote: string): Promise<void> {
 }
 
 export async function getChangedFiles(cwd: string): Promise<string[]> {
-  const output = await run(["status", "--porcelain"], cwd);
-  if (!output) return [];
-  return output
-    .split("\n")
-    .map((line) => line.slice(3).trim())
-    .filter((file) => file.length > 0);
+  const files = await parseStatus(cwd);
+  return files.map((f) => f.file);
 }
 
 export interface ChangedFile {
@@ -101,16 +97,33 @@ export interface ChangedFile {
 }
 
 export async function parseStatus(cwd: string): Promise<ChangedFile[]> {
-  const output = await run(["status", "--porcelain"], cwd);
-  if (!output) return [];
+  let result: { stdout: string };
+  try {
+    result = await exec("git", ["status", "--porcelain"], { cwd, timeout: GIT_TIMEOUT_MS });
+  } catch (err) {
+    throw new Error(
+      `Failed to read git status: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+  // Use raw stdout (no trim) — leading spaces in porcelain format are meaningful
+  const output = result.stdout;
+  if (!output || !output.trim()) return [];
   return output
     .split("\n")
     .filter((line) => line.length >= 3)
-    .map((line) => ({
-      file: line.slice(3).trim(),
-      indexStatus: line[0] as string,
-      workTreeStatus: line[1] as string,
-    }))
+    .map((line) => {
+      const indexStatus = line[0] as string;
+      const workTreeStatus = line[1] as string;
+      let file = line.slice(3).trim();
+      // Handle renamed/copied files: "R  old -> new" or "C  old -> new"
+      if (
+        (indexStatus === "R" || indexStatus === "C") &&
+        file.includes(" -> ")
+      ) {
+        file = file.split(" -> ").pop()!;
+      }
+      return { file, indexStatus, workTreeStatus };
+    })
     .filter((entry) => entry.file.length > 0);
 }
 

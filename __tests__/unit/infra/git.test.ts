@@ -142,4 +142,47 @@ describe("GitClient", () => {
     await expect(git.fetch(tempDir, "origin")).resolves.not.toThrow();
     await rm(remoteDir, { recursive: true, force: true });
   });
+
+  it("should detect unstaged modified files", async () => {
+    await writeFile(join(tempDir, "README.md"), "# Updated content");
+    const unstaged = await git.getUnstagedFiles(tempDir);
+    expect(unstaged.length).toBe(1);
+    expect(unstaged[0]!.file).toBe("README.md");
+    expect(unstaged[0]!.workTreeStatus).toBe("M");
+  });
+
+  it("should detect untracked files as unstaged", async () => {
+    await writeFile(join(tempDir, "newfile.txt"), "new content");
+    const unstaged = await git.getUnstagedFiles(tempDir);
+    expect(unstaged.length).toBe(1);
+    expect(unstaged[0]!.file).toBe("newfile.txt");
+    expect(unstaged[0]!.indexStatus).toBe("?");
+  });
+
+  it("should return empty unstaged for clean tree", async () => {
+    const unstaged = await git.getUnstagedFiles(tempDir);
+    expect(unstaged).toEqual([]);
+  });
+
+  it("should handle renamed files in parseStatus", async () => {
+    await writeFile(join(tempDir, "original.txt"), "content");
+    await exec("git", ["add", "original.txt"], { cwd: tempDir });
+    await exec("git", ["commit", "-m", "add original"], { cwd: tempDir });
+    await exec("git", ["mv", "original.txt", "renamed.txt"], { cwd: tempDir });
+    const files = await git.parseStatus(tempDir);
+    const renamed = files.find((f) => f.indexStatus === "R");
+    expect(renamed).toBeDefined();
+    expect(renamed!.file).toBe("renamed.txt");
+  });
+
+  it("should detect staged files separately from unstaged", async () => {
+    await writeFile(join(tempDir, "staged.txt"), "staged");
+    await exec("git", ["add", "staged.txt"], { cwd: tempDir });
+    await writeFile(join(tempDir, "unstaged.txt"), "unstaged");
+    const staged = await git.getStagedFiles(tempDir);
+    const unstaged = await git.getUnstagedFiles(tempDir);
+    expect(staged.some((f) => f.file === "staged.txt")).toBe(true);
+    expect(unstaged.some((f) => f.file === "unstaged.txt")).toBe(true);
+    expect(unstaged.some((f) => f.file === "staged.txt")).toBe(false);
+  });
 });
