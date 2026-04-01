@@ -6,7 +6,7 @@ import { readConfig, writeConfig } from "../../core/config.js";
 import { initState } from "../../core/state.js";
 import { scanProject } from "../../core/scanner.js";
 import { fileExists } from "../../infra/filesystem.js";
-import { DEFAULT_CONFIG, type ContextMode, type DevflowConfig } from "../../core/types.js";
+import { DEFAULT_CONFIG, type ContextMode, type Language, type CommitConvention, type DevflowConfig } from "../../core/types.js";
 import { writeEnvVar } from "../../infra/env.js";
 import { resolveClaudeBinary, validateClaudeCli } from "../../providers/claude-code.js";
 import { readFile } from "node:fs/promises";
@@ -81,6 +81,39 @@ export function makeInitCommand(): Command {
         p.cancel("Init cancelled.");
         process.exit(0);
       }
+      const language = await p.select({
+        message: "Output language",
+        options: [
+          { value: "en" as const, label: "English" },
+          { value: "pt-br" as const, label: "Português (Brasil)" },
+          { value: "es" as const, label: "Español" },
+          { value: "fr" as const, label: "Français" },
+          { value: "de" as const, label: "Deutsch" },
+          { value: "zh" as const, label: "中文 (简体)" },
+          { value: "ja" as const, label: "日本語" },
+          { value: "ko" as const, label: "한국어" },
+        ],
+      });
+      if (p.isCancel(language)) {
+        p.cancel("Init cancelled.");
+        process.exit(0);
+      }
+
+      const commitConvention = await p.select({
+        message: "Commit convention",
+        options: [
+          { value: "conventional" as const, label: "Conventional Commits", hint: "feat:, fix:, chore:, etc." },
+          { value: "gitmoji" as const, label: "Gitmoji", hint: "emoji-based commits" },
+          { value: "angular" as const, label: "Angular", hint: "feat, fix, docs, style, refactor, test, chore" },
+          { value: "kernel" as const, label: "Kernel", hint: "subsystem: description" },
+          { value: "custom" as const, label: "Custom", hint: "no enforced format" },
+        ],
+      });
+      if (p.isCancel(commitConvention)) {
+        p.cancel("Init cancelled.");
+        process.exit(0);
+      }
+
       let apiKey: string | undefined;
       let claudeCliPath: string | undefined;
       if (provider === "claude-code-cli") {
@@ -158,6 +191,8 @@ export function makeInitCommand(): Command {
         provider: provider as DevflowConfig["provider"],
         ...(claudeCliPath ? { claudeCliPath } : {}),
         contextMode: contextMode as ContextMode,
+        language: language as Language,
+        commitConvention: commitConvention as CommitConvention,
         project: scan,
       };
       await writeConfig(cwd, config);

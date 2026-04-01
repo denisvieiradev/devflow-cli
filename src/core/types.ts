@@ -6,8 +6,8 @@ export interface DevflowConfig {
     balanced: string;
     powerful: string;
   };
-  language: "en";
-  commitConvention: "conventional";
+  language: Language;
+  commitConvention: CommitConvention;
   branchPattern: string;
   templatesPath: string;
   contextMode: ContextMode;
@@ -23,6 +23,10 @@ export interface ProjectInfo {
 }
 
 export type ContextMode = "light" | "normal";
+
+export type Language = "en" | "pt-br" | "es" | "fr" | "de" | "zh" | "ja" | "ko";
+
+export type CommitConvention = "conventional" | "gitmoji" | "angular" | "kernel" | "custom";
 
 export interface DevflowState {
   features: Record<string, FeatureState>;
@@ -86,9 +90,9 @@ export interface TaskState {
 export const DEFAULT_CONFIG: DevflowConfig = {
   provider: "claude-code-api-key",
   models: {
-    fast: "claude-haiku-4-5-20251001",
-    balanced: "claude-sonnet-4-5-20250514",
-    powerful: "claude-opus-4-5-20250514",
+    fast: "claude-haiku-4-5",
+    balanced: "claude-sonnet-4-6",
+    powerful: "claude-opus-4-6",
   },
   language: "en",
   commitConvention: "conventional",
