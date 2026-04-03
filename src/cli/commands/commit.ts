@@ -142,6 +142,7 @@ async function handleSingleCommit(
 async function handleCommitPlan(
   cwd: string,
   plan: CommitPlan,
+  stagedFilesList: string[],
   options: { push?: boolean },
 ): Promise<void> {
   p.log.info(chalk.bold("Commit plan:\n"));
@@ -173,14 +174,38 @@ async function handleCommitPlan(
     await git.commit(cwd, combined);
     p.log.success("Committed all changes as a single commit.");
   } else {
-    await git.resetStaged(cwd);
-    for (const group of plan.commits) {
-      await git.add(cwd, group.files);
-      const msg = group.description
-        ? `${group.message}\n\n${group.description}`
-        : group.message;
-      await git.commit(cwd, msg);
-      p.log.success(`Committed: ${chalk.green(group.message)}`);
+    const stagedSet = new Set(stagedFilesList);
+
+    const validGroups = plan.commits
+      .map((group) => ({
+        ...group,
+        files: group.files.filter((f) => stagedSet.has(f)),
+      }))
+      .filter((group) => group.files.length > 0);
+
+    const assignedFiles = new Set(validGroups.flatMap((g) => g.files));
+    const unassigned = stagedFilesList.filter((f) => !assignedFiles.has(f));
+    const lastGroup = validGroups[validGroups.length - 1];
+    if (unassigned.length > 0 && lastGroup) {
+      lastGroup.files.push(...unassigned);
+    }
+
+    if (validGroups.length === 0) {
+      const combined = plan.commits
+        .map((c) => c.description ? `${c.message}\n\n${c.description}` : c.message)
+        .join("\n\n");
+      await git.commit(cwd, combined);
+      p.log.success("Committed all changes as a single commit.");
+    } else {
+      await git.resetStaged(cwd);
+      for (const group of validGroups) {
+        await git.add(cwd, group.files);
+        const msg = group.description
+          ? `${group.message}\n\n${group.description}`
+          : group.message;
+        await git.commit(cwd, msg);
+        p.log.success(`Committed: ${chalk.green(group.message)}`);
+      }
     }
   }
 
@@ -315,7 +340,7 @@ export function makeCommitCommand(): Command {
       const parsed = parseCommitResponse(response.content);
 
       if (parsed.type === "plan") {
-        await handleCommitPlan(cwd, parsed, options);
+        await handleCommitPlan(cwd, parsed, stagedFilesList, options);
       } else {
         await handleSingleCommit(cwd, parsed.message, options);
       }

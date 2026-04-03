@@ -149,11 +149,13 @@ export class ClaudeCodeProvider implements LLMProvider {
 
   private async callViaCli(args: string[]): Promise<ClaudeCliResult> {
     try {
+      // `input: ""` closes stdin immediately, preventing Claude CLI's "no stdin data" warning
       const { stdout } = await execFileAsync(this.claudeBinaryPath, args, {
         timeout: DEFAULT_TIMEOUT_MS,
         maxBuffer: 10 * 1024 * 1024,
+        ...({ input: "" } as Record<string, unknown>),
       });
-      return this.parseResponse(stdout);
+      return this.parseResponse(stdout as string);
     } catch (err: unknown) {
       const execErr = err as { stdout?: string; stderr?: string };
       // Try to extract the real error from CLI JSON output
