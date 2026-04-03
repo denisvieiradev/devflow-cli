@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-04-03
+
+### Fixed
+- Fixed `commit` command to validate plan file lists against actual staged files, assign any unassigned staged files to the last commit group, and fall back to a single commit when no plan groups match
+- Fixed stdin handling in the Claude Code provider to suppress "no stdin data" CLI warnings and improved `stdout` type safety
+
 ## [1.6.2] - 2026-04-02
 
 ### Fixed
